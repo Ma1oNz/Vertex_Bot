@@ -2,6 +2,5 @@ discord
 python-dotenv
 cryptography
 PyQt6
-os
 discord.py
 dotenv
