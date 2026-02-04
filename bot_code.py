@@ -70,6 +70,16 @@ join_log = {}
 
 MUTE_ROLE_ID = None  # если есть роль мьюта, укажи её ID здесь
 
+# Роли, которым разрешена команда !опл
+OPL_PAYMENT_ROLES = [
+    1468329497962217654,
+    1468329498670792927,
+    1468329501321724012,
+    1468329503469080831,
+    1468329507709522136,
+    1468329508900966686
+]
+
 
 def load_config():
     try:
@@ -223,8 +233,6 @@ async def on_message(message: discord.Message):
             await bot.close()
             return
 
-    # капча больше не используется – блок удалён
-
     await bot.process_commands(message)
 
 
@@ -273,10 +281,9 @@ async def on_member_join(member: discord.Member):
                         'welcome_message',
                         'Добро пожаловать на сервер!'
                     )
-                    msg = await welcome_channel.send(
+                    await welcome_channel.send(
                         f"{member.mention}, {welcome_msg}"
                     )
-                    # можно не редактировать, просто оставим сообщение
             except:
                 pass
 
@@ -293,6 +300,40 @@ async def on_ready():
         print(f'Синхронизировано {len(synced)} команд')
     except Exception as e:
         print(f'Ошибка синхронизации: {e}')
+
+
+# ================== ТЕКСТОВАЯ КОМАНДА !опл ==================
+
+@bot.command(name="опл")
+async def opl_command(ctx: commands.Context):
+    """
+    Команда !опл — высылает реквизиты оплаты в текущий канал.
+    Доступна только пользователям с ролями из OPL_PAYMENT_ROLES.
+    """
+    if ctx.author.bot:
+        return
+
+    user_role_ids = [role.id for role in ctx.author.roles]
+    if not any(rid in user_role_ids for rid in OPL_PAYMENT_ROLES):
+        await ctx.reply("У вас нет прав для использования этой команды.", mention_author=False)
+        return
+
+    text = (
+        "**Российская карта:**\n"
+        "https://yoomoney.ru/prepaid?from=main-page\n"
+        "Номер карты: `4100118483222468`\n"
+        "Имя на карте: `YOOMONEY VIRTUAL`\n\n"
+        "**Украинская карта:**\n"
+        "Номер карты: `5168 7521 1708 7786`\n"
+        "Имя на карте: `PRIVAT BANK`\n\n"
+        "**Инструкция по переводу на российскую карту:**\n"
+        "1. Перейдите по [ссылке](https://yoomoney.ru/prepaid?from=main-page)\n"
+        "2. Введите сумму, которую вам нужно перевести, в первом окне.\n"
+        "3. Выберите перевод с российской карты и введите данные своей карты.\n"
+        "4. После открытия окна с подтверждением введите код списания и отправьте чек об оплате."
+    )
+
+    await ctx.send(text)
 
 
 # ================== СЛЭШ-КОМАНДЫ АДМИНА ==================
@@ -603,7 +644,7 @@ class TicketModal(Modal, title='Создание тикета'):
             await interaction.response.defer(ephemeral=True)
             global ticket_counter
             ticket_counter += 1
-            number = ticket_counter  # без нулей
+            number = ticket_counter  # 1,2,3...
 
             service_name = self.category.replace(" ", "-")
             nick_name = self.hosting_nick.value.replace(" ", "-")
@@ -654,7 +695,6 @@ class TicketModal(Modal, title='Создание тикета'):
                 'number': number
             }
 
-            # embed в канале тикета
             embed = discord.Embed(
                 title=f"Новый тикет #{number}",
                 color=discord.Color.from_rgb(88, 101, 242)
@@ -686,7 +726,6 @@ class TicketModal(Modal, title='Создание тикета'):
                 view=TicketControlView(ticket_id)
             )
 
-            # уведомление в лог-канал
             log_channel = guild.get_channel(LOG_CHANNEL_ID)
             if log_channel:
                 mod_embed = discord.Embed(
@@ -1107,7 +1146,7 @@ async def on_app_command_error(
             pass
 
 
-# ================== ФУНКЦИЯ ЗАПУСКА ДЛЯ GUI / standalone ==================
+# ================== ФУНКЦИЯ ЗАПУСКА ==================
 
 def run_bot():
     bot.run(TOKEN)
