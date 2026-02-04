@@ -644,11 +644,13 @@ class TicketModal(Modal, title='Создание тикета'):
             await interaction.response.defer(ephemeral=True)
             global ticket_counter
             ticket_counter += 1
-            number = ticket_counter  # 1,2,3...
+            number = ticket_counter  # 1, 2, 3 ...
 
+            # название услуги = категория без пробелов
             service_name = self.category.replace(" ", "-")
-            nick_name = self.hosting_nick.value.replace(" ", "-")
-            ticket_id = f"🎟️・{service_name}-{nick_name}-{number}"
+
+            # ИМЯ КАНАЛА БЕЗ НИКА: 🎟️・Категория-номер
+            ticket_id = f"🎟️・{service_name}-{number}"
 
             user = interaction.user
             guild = interaction.guild
@@ -695,18 +697,14 @@ class TicketModal(Modal, title='Создание тикета'):
                 'number': number
             }
 
+            # embed в самом тикет-канале
             embed = discord.Embed(
-                title=f"Новый тикет #{number}",
+                title=f"Новый тикет #{number} • {self.category}",
                 color=discord.Color.from_rgb(88, 101, 242)
             )
             embed.add_field(
                 name="👤 Пользователь",
                 value=f"{user.mention} (`{user.display_name}`)",
-                inline=False
-            )
-            embed.add_field(
-                name="📂 Категория",
-                value=self.category,
                 inline=False
             )
             embed.add_field(
@@ -726,6 +724,7 @@ class TicketModal(Modal, title='Создание тикета'):
                 view=TicketControlView(ticket_id)
             )
 
+            # уведомление в лог-канал
             log_channel = guild.get_channel(LOG_CHANNEL_ID)
             if log_channel:
                 mod_embed = discord.Embed(
@@ -1154,3 +1153,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
